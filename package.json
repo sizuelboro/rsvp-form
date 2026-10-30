@@ -1,0 +1,24 @@
+{
+  "name": "rsvp-form",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w @rsvp/api",
+    "dev:web": "npm run dev -w @rsvp/web",
+    "build": "npm run build -w @rsvp/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test -w @rsvp/core && npm run test -w @rsvp/renderer",
+    "test:api": "npm run test -w @rsvp/api",
+    "db:migrate:local": "npm run db:migrate:local -w @rsvp/api",
+    "deploy": "npm run build && npm run deploy -w @rsvp/api"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}
