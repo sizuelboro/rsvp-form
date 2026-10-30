@@ -74,3 +74,5 @@ See [docs/06-deployment.md](docs/06-deployment.md): create the D1 database, R2 b
 - [05 — Security](docs/05-security.md)
 - [06 — Deployment](docs/06-deployment.md)
 - [07 — Testing](docs/07-testing.md)
+- [Explainer for reviewers](docs/EXPLAINER.md)
+- CI: copy [docs/ci-workflow.yml](docs/ci-workflow.yml) to `.github/workflows/ci.yml` to enable GitHub Actions
