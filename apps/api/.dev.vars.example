@@ -1,0 +1,6 @@
+# Copy to .dev.vars for local development. Never commit real secrets.
+IP_HASH_SALT="change-me-local-salt"
+# Raise rate limits for local e2e runs (production default is 1)
+RATE_LIMIT_SCALE="50"
+# RESEND_API_KEY="re_..."            # only needed with EMAIL_MODE=resend
+# SENTRY_DSN="https://key@o0.ingest.sentry.io/0"

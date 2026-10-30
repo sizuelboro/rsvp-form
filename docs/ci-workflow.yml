@@ -1,0 +1,28 @@
+# To enable CI, copy this file to .github/workflows/ci.yml (requires a token/user with the `workflow` scope).
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - name: API end-to-end (local Worker + D1/R2/Queues)
+        working-directory: apps/api
+        run: |
+          cp .dev.vars.example .dev.vars
+          npx wrangler d1 migrations apply DB --local
+          npx wrangler dev --port 8787 --ip 127.0.0.1 > /tmp/wrangler.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8787/api/v1/health && break; sleep 2; done
+          npx vitest run
+      - if: failure()
+        run: cat /tmp/wrangler.log || true
