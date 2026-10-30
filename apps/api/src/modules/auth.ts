@@ -58,6 +58,14 @@ auth.post('/logout', async (c) => {
   return c.json({ ok: true });
 });
 
+/** Session probe for the SPA: 200 with user=null when signed out (keeps the browser console clean). */
+auth.get('/session', async (c) => {
+  const user = c.get('user');
+  if (!user) return c.json({ user: null, workspaces: [] });
+  const workspaces = await all(c.env.DB, `SELECT w.id, w.name, w.slug, m.role FROM workspace_members m JOIN workspaces w ON w.id = m.workspace_id WHERE m.user_id = ? AND w.deleted_at IS NULL ORDER BY w.created_at`, user.id);
+  return c.json({ user, workspaces });
+});
+
 auth.get('/me', requireUser, async (c) => {
   const user = c.get('user')!;
   const workspaces = await all<{ id: string; name: string; slug: string; role: string }>(

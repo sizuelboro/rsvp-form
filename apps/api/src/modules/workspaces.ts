@@ -159,6 +159,13 @@ workspace.get('/audit-logs', permission('workspace.manage'), async (c) => {
 /** Activity feed for the dashboard (non-admin friendly subset of audit logs). */
 workspace.get('/activity', async (c) => {
   const items = await all(c.env.DB, `SELECT a.id, a.action, a.entity_type, a.entity_id, a.data, a.created_at, u.name AS actor_name FROM audit_logs a LEFT JOIN users u ON u.id = a.actor_user_id
-    WHERE a.workspace_id = ? AND a.action NOT LIKE 'user.%' ORDER BY a.created_at DESC LIMIT 20`, c.get('workspace').id);
+    WHERE a.workspace_id = ? AND a.action NOT LIKE 'user.%' AND a.action != 'feedback.submitted' ORDER BY a.created_at DESC LIMIT 20`, c.get('workspace').id);
   return c.json({ items });
+});
+
+/** In-app product feedback. Stored in the audit log for the product team (no third-party destination). */
+workspace.post('/feedback', async (c) => {
+  const input = await body(c, z.object({ message: z.string().trim().min(3).max(4000), page: z.string().max(200).optional() }));
+  await audit(c, 'feedback.submitted', undefined, input);
+  return c.json({ ok: true }, 201);
 });

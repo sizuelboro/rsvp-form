@@ -48,6 +48,7 @@
 .fr-field[data-align="center"] { text-align: center; }
 .fr-field[data-align="right"] { text-align: right; }
 
+.fr-root legend { padding: 0; }
 .fr-label { display: block; font-weight: 600; margin-bottom: 4px; font-size: .97em; }
 .fr-req { color: var(--f-primary); margin-left: 3px; }
 .fr-help { color: var(--f-muted); font-size: .88em; margin: 0 0 8px; white-space: pre-line; }
