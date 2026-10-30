@@ -4,6 +4,7 @@ import { ApiError } from './lib/http';
 import { loadSession, requireCsrfHeader, requireUser, requireWorkspace } from './lib/auth';
 import { escapeHtml } from './lib/format';
 import { first } from './lib/db';
+import { captureException } from './lib/monitoring';
 import { auth } from './modules/auth';
 import { workspace, workspacesRoot } from './modules/workspaces';
 import { forms } from './modules/forms';
@@ -41,6 +42,7 @@ app.onError((err, c) => {
     return c.json({ error: { code: err.code, message: err.message, details: err.details ?? null } }, err.status);
   }
   console.error(JSON.stringify({ msg: 'unhandled_error', id: c.get('requestId'), path: c.req.path, error: err instanceof Error ? `${err.message}\n${err.stack}` : String(err) }));
+  try { c.executionCtx.waitUntil(captureException(c.env.SENTRY_DSN, err, { requestId: c.get('requestId'), path: c.req.path, method: c.req.method })); } catch { /* no execution context in tests */ }
   return c.json({ error: { code: 'internal_error', message: 'Something went wrong. Please try again.', requestId: c.get('requestId') } }, 500);
 });
 
@@ -122,11 +124,14 @@ export default {
   },
   async scheduled(_event: ScheduledController, env: Env): Promise<void> {
     const now = new Date().toISOString();
+    // Uploads never attached to a submission within a day are orphans: remove the R2 object and the row.
+    const orphans = await env.DB.prepare("SELECT key FROM uploads WHERE submission_id IS NULL AND created_at < strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 day') LIMIT 1000").all<{ key: string }>();
+    const keys = (orphans.results ?? []).map((r) => r.key);
+    if (keys.length) await env.UPLOADS.delete(keys);
     await env.DB.batch([
       env.DB.prepare('DELETE FROM sessions WHERE expires_at < ?').bind(now),
       env.DB.prepare('DELETE FROM rate_limits WHERE window_start < ?').bind(Math.floor(Date.now() / 1000) - 86400),
-      // Uploads never attached to a submission within a day are orphans.
-      env.DB.prepare("DELETE FROM uploads WHERE submission_id IS NULL AND created_at < strftime('%Y-%m-%dT%H:%M:%fZ','now','-1 day')"),
+      ...keys.map((k) => env.DB.prepare('DELETE FROM uploads WHERE key = ?').bind(k)),
     ]);
   },
 } satisfies ExportedHandler<Env, QueueMessage>;
