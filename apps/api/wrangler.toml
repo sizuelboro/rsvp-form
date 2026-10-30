@@ -1,0 +1,46 @@
+name = "rsvp-form"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Static assets: dashboard SPA (index.html) and the public renderer (public.html),
+# both produced by `npm run build -w @rsvp/web`.
+[assets]
+directory = "../web/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*", "/f/*", "/e/*", "/i/*"]
+
+[vars]
+APP_NAME = "Invitely"
+APP_URL = "http://localhost:8787"
+EMAIL_FROM = "Invitely <hello@example.com>"
+# "log" records emails without sending (local dev); "resend" sends through Resend (requires RESEND_API_KEY secret)
+EMAIL_MODE = "log"
+TRIAL_PLAN = "pro"
+TRIAL_DAYS = "14"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "rsvp-form"
+database_id = "00000000-0000-0000-0000-000000000000" # replace with `wrangler d1 create rsvp-form` output
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "UPLOADS"
+bucket_name = "rsvp-form-uploads"
+
+[[queues.producers]]
+binding = "NOTIFICATIONS"
+queue = "rsvp-form-notifications"
+
+[[queues.consumers]]
+queue = "rsvp-form-notifications"
+max_batch_size = 10
+max_retries = 5
+dead_letter_queue = "rsvp-form-notifications-dlq"
+
+[observability]
+enabled = true
+
+# Secrets (set with `wrangler secret put`): RESEND_API_KEY, IP_HASH_SALT, SENTRY_DSN, STRIPE_SECRET_KEY, RAZORPAY_KEY_SECRET

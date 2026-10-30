@@ -328,3 +328,15 @@ export function formatAnswer(el: FormElement | undefined, value: unknown): strin
     default: return String(value);
   }
 }
+
+const RAW_TEXT_TYPES = new Set(['single_choice', 'dropdown', 'yes_no', 'attendance', 'meal_preference', 'accommodation', 'transportation', 'country']);
+
+/**
+ * Value stored in the normalized `answers.value_text` column: machine values for choice-like
+ * fields (so analytics group by stable option ids, not labels that may be renamed) and
+ * human-readable text for everything else.
+ */
+export function answerIndexText(el: FormElement, value: unknown): string {
+  if (RAW_TEXT_TYPES.has(el.type) && typeof value === 'string') return value;
+  return formatAnswer(el, value).slice(0, 2000);
+}
